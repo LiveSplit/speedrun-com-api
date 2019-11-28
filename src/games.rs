@@ -1,11 +1,10 @@
-use crate::{execute_request, execute_paginated_request, Client, Data};
+use crate::{execute_paginated_request, execute_request, Client, Data, Error};
 use arrayvec::ArrayString;
-use futures::{Stream, StreamExt};
+use futures_util::stream::{Stream, StreamExt};
 use serde::Deserialize;
 use snafu::ResultExt;
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::mem;
 use url::Url;
 
 #[derive(Debug, Deserialize)]
@@ -123,18 +122,6 @@ pub struct GameHeader {
 }
 
 #[derive(Debug, snafu::Snafu)]
-pub enum Error {
-    #[snafu(display("Failed accessing the Game with ID '{}'.", id))]
-    Api { id: String, source: crate::Error },
-}
-
-#[derive(Debug, snafu::Snafu)]
-pub enum SearchError {
-    #[snafu(display("Failed searching for the game '{}'.", name))]
-    Search { name: String, source: crate::Error },
-}
-
-#[derive(Debug, snafu::Snafu)]
 pub enum HeadersError {
     /// Failed enumerating all the games on speedrun.com.
     Headers { source: crate::Error },
@@ -159,25 +146,16 @@ pub fn all(
     execute_paginated_request(client, url).map(|item| item.context(Headers))
 }
 
-pub fn search(
-    client: &Client,
-    mut name: String,
-) -> impl Stream<Item = Result<Game, SearchError>> + '_ {
+pub fn search(client: &Client, name: String) -> impl Stream<Item = Result<Game, Error>> + '_ {
     let mut url = api_url!(games);
     url.query_pairs_mut().append_pair("name", &name);
 
-    execute_paginated_request(client, url).map(move |item| {
-        item.with_context(|| Search {
-            name: mem::replace(&mut name, String::new()),
-        })
-    })
+    execute_paginated_request(client, url)
 }
 
 pub async fn by_id(client: &Client, game_id: String) -> Result<Game, Error> {
     let mut url = api_url!(games);
     url.path_segments_mut().unwrap().push(&game_id);
 
-    execute_request(client, url)
-        .await
-        .with_context(|| Api { id: game_id })
+    execute_request(client, url).await
 }

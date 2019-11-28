@@ -1,6 +1,5 @@
-use crate::{execute_request, Client};
+use crate::{execute_request, Client, Error};
 use serde::Deserialize;
-use snafu::ResultExt;
 use std::collections::HashMap;
 use url::Url;
 
@@ -55,14 +54,6 @@ fn runs_url(run_id: &str) -> Url {
     url
 }
 
-#[derive(Debug, snafu::Snafu)]
-pub enum Error {
-    #[snafu(display("Failed accessing the Run with ID '{}'.", id))]
-    Api { id: String, source: crate::Error },
-}
-
 pub async fn by_id(client: &Client, run_id: String) -> Result<Run, Error> {
-    execute_request(client, runs_url(&run_id))
-        .await
-        .with_context(|| Api { id: run_id })
+    execute_request(client, runs_url(&run_id)).await
 }

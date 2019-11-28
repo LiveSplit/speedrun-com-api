@@ -1,8 +1,8 @@
-#![feature(async_await)]
-
-use futures::stream;
-use futures::Stream;
-use futures::TryStreamExt;
+use futures_util::{
+    stream::{self, Stream},
+    try_stream::TryStreamExt,
+};
+use http::StatusCode;
 use hyper_rustls::HttpsConnector;
 use serde::{de::DeserializeOwned, Deserialize};
 use snafu::ResultExt;
@@ -25,10 +25,20 @@ pub mod runs;
 pub enum Error {
     /// Failed receiving the response from speedrun.com.
     Response { source: hyper::Error },
-    #[snafu(display("Unsuccessful Request: {}.", status))]
-    Status { status: hyper::StatusCode },
+    #[snafu(display("HTTP Status Code: {}", status.canonical_reason().unwrap_or_else(|| status.as_str())))]
+    Status { status: StatusCode },
+    #[snafu(display("{}", message))]
+    Api {
+        status: StatusCode,
+        message: Box<str>,
+    },
     /// Failed parsing the response from speedrun.com.
     Json { source: serde_json::Error },
+}
+
+#[derive(Deserialize)]
+struct ApiError {
+    message: Box<str>,
 }
 
 #[repr(transparent)]
@@ -75,11 +85,18 @@ async fn execute_request_without_data<T: DeserializeOwned>(
         .get(url.as_str().parse().unwrap())
         .await
         .context(Response)?;
+    let status = response.status();
 
-    if !response.status().is_success() {
-        return Err(Error::Status {
-            status: response.status(),
-        });
+    if !status.is_success() {
+        if let Ok(buf) = response.into_body().try_concat().await {
+            if let Ok(error) = serde_json::from_reader::<_, ApiError>(&*buf) {
+                return Err(Error::Api {
+                    status,
+                    message: error.message,
+                });
+            }
+        }
+        return Err(Error::Status { status });
     }
 
     let buf = response.into_body().try_concat().await.context(Response)?;
