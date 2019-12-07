@@ -1,9 +1,6 @@
-use futures_util::{
-    stream::{self, Stream},
-    try_stream::TryStreamExt,
-};
-use http::StatusCode;
-use hyper_rustls::HttpsConnector;
+use futures_util::stream::{self, Stream};
+use http::{Request, StatusCode};
+use platform::Body;
 use serde::{de::DeserializeOwned, Deserialize};
 use snafu::ResultExt;
 use url::Url;
@@ -18,6 +15,8 @@ macro_rules! api_url {
     };
 }
 
+mod platform;
+
 pub mod categories;
 pub mod common;
 pub mod games;
@@ -27,7 +26,7 @@ pub mod runs;
 #[derive(Debug, snafu::Snafu)]
 pub enum Error {
     /// Failed receiving the response from speedrun.com.
-    Response { source: hyper::Error },
+    Response { source: platform::Error },
     #[snafu(display("HTTP Status Code: {}", status.canonical_reason().unwrap_or_else(|| status.as_str())))]
     Status { status: StatusCode },
     #[snafu(display("{}", message))]
@@ -73,21 +72,21 @@ enum PaginationLink {
     Previous { uri: String },
 }
 
-pub type Client = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
+pub use platform::Client;
 
 async fn execute_request_without_data<T: DeserializeOwned>(
     client: &Client,
     url: Url,
 ) -> Result<T, Error> {
     let response = client
-        .get(url.as_str().parse().unwrap())
+        .request(Request::get(url.as_str()).body(Body::empty()).unwrap())
         .await
         .context(Response)?;
     let status = response.status();
 
     if !status.is_success() {
-        if let Ok(buf) = response.into_body().try_concat().await {
-            if let Ok(error) = serde_json::from_reader::<_, ApiError>(&*buf) {
+        if let Ok(reader) = platform::recv_reader(response.into_body()).await {
+            if let Ok(error) = serde_json::from_reader::<_, ApiError>(reader) {
                 return Err(Error::Api {
                     status,
                     message: error.message,
@@ -97,8 +96,10 @@ async fn execute_request_without_data<T: DeserializeOwned>(
         return Err(Error::Status { status });
     }
 
-    let buf = response.into_body().try_concat().await.context(Response)?;
-    serde_json::from_reader(&*buf).context(Json)
+    let reader = platform::recv_reader(response.into_body())
+        .await
+        .context(Response)?;
+    serde_json::from_reader(reader).context(Json)
 }
 
 async fn execute_request<T: DeserializeOwned>(client: &Client, url: Url) -> Result<T, Error> {
