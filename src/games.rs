@@ -11,15 +11,15 @@ pub use crate::common::Names;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Game {
-    pub id: String,
+    pub id: Box<str>,
     pub names: Names,
-    pub abbreviation: String,
-    pub weblink: String,
-    pub released: u64, // TODO
-    pub release_date: String,
+    pub abbreviation: Box<str>,
+    pub weblink: Box<str>,
+    pub released: u16,
+    pub release_date: Box<str>,
     pub assets: Assets,
     pub ruleset: Rules,
-    pub platforms: Vec<String>,
+    pub platforms: Vec<Box<str>>,
     pub variables: Option<Data<Vec<Variable>>>,
 }
 
@@ -42,7 +42,7 @@ pub struct Assets {
 
 #[derive(Debug, Deserialize)]
 pub struct Asset {
-    pub uri: String,
+    pub uri: Box<str>,
     pub width: u64, // TODO: Number Type
     pub height: u64,
 }
@@ -71,9 +71,9 @@ pub enum TimingMethod {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Variable {
-    pub id: String,
-    pub name: String,
-    pub category: Option<String>,
+    pub id: Box<str>,
+    pub name: Box<str>,
+    pub category: Option<Box<str>>,
     pub scope: VariableScope,
     pub values: VariableValues,
     pub mandatory: bool,
@@ -97,22 +97,22 @@ pub enum VariableScopeKind {
 
 #[derive(Debug, Deserialize)]
 pub struct VariableValues {
-    pub values: HashMap<String, VariableValue>,
-    pub default: Option<String>,
+    pub values: HashMap<Box<str>, VariableValue>,
+    pub default: Option<Box<str>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct VariableValue {
-    pub label: String,
-    pub rules: Option<String>,
+    pub label: Box<str>,
+    pub rules: Option<Box<str>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct GameHeader {
-    pub id: String,
+    pub id: Box<str>,
     pub names: Names,
-    pub abbreviation: String,
-    pub weblink: String,
+    pub abbreviation: Box<str>,
+    pub weblink: Box<str>,
 }
 
 pub fn all(
@@ -134,16 +134,19 @@ pub fn all(
     execute_paginated_request(client, url)
 }
 
-pub fn search(client: &Client, name: String) -> impl Stream<Item = Result<Game, Error>> + '_ {
+pub fn search<'client>(
+    client: &'client Client,
+    name: &str,
+) -> impl Stream<Item = Result<Game, Error>> + 'client {
     let mut url = api_url!(games);
-    url.query_pairs_mut().append_pair("name", &name);
+    url.query_pairs_mut().append_pair("name", name);
 
     execute_paginated_request(client, url)
 }
 
-pub async fn by_id(client: &Client, game_id: String) -> Result<Game, Error> {
+pub async fn by_id(client: &Client, game_id: &str) -> Result<Game, Error> {
     let mut url = api_url!(games);
-    url.path_segments_mut().unwrap().push(&game_id);
+    url.path_segments_mut().unwrap().push(game_id);
 
     execute_request(client, url).await
 }

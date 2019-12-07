@@ -15,7 +15,7 @@ bitflags::bitflags! {
 
 #[derive(Debug, Deserialize)]
 pub struct Leaderboard {
-    pub weblink: String,
+    pub weblink: Box<str>,
     pub runs: Vec<Record>,
     pub players: Option<Data<Vec<Player>>>,
 }
@@ -47,16 +47,16 @@ pub enum Player {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct User {
-    pub id: String,
+    pub id: Box<str>,
     pub names: Names,
-    pub weblink: String,
+    pub weblink: Box<str>,
     pub name_style: NameStyle,
     pub location: Option<UserLocation>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Guest {
-    pub name: String,
+    pub name: Box<str>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -71,8 +71,8 @@ pub enum NameStyle {
 
 #[derive(Debug, Deserialize)]
 pub struct Color {
-    pub light: String,
-    pub dark: String,
+    pub light: Box<str>,
+    pub dark: Box<str>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,7 +82,7 @@ pub struct UserLocation {
 
 #[derive(Debug, Deserialize)]
 pub struct UserCountry {
-    pub code: String,
+    pub code: Box<str>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,14 +93,14 @@ pub struct Record {
 
 pub async fn get(
     client: &Client,
-    game_id: String,
-    category_id: String,
+    game_id: &str,
+    category_id: &str,
     embeds: Embeds,
 ) -> Result<Leaderboard, Error> {
     let mut url = api_url!(leaderboards);
     url.path_segments_mut()
         .unwrap()
-        .extend(&[&game_id, "category", &category_id]);
+        .extend(&[game_id, "category", category_id]);
 
     if !embeds.is_empty() {
         let mut buf = ArrayString::<[u8; 8]>::new();
@@ -115,5 +115,5 @@ pub async fn get(
         url.query_pairs_mut().append_pair("embed", &buf);
     }
 
-    execute_request(client, dbg!(url)).await
+    execute_request(client, url).await
 }

@@ -7,19 +7,19 @@ use url::Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Run {
-    pub id: String,
-    pub weblink: String,
-    pub game: String,
-    pub category: String,
+    pub id: Box<str>,
+    pub weblink: Box<str>,
+    pub game: Box<str>,
+    pub category: Box<str>,
     pub videos: Option<Videos>,
-    pub comment: Option<String>,
+    pub comment: Option<Box<str>>,
     pub players: Players,
-    pub date: Option<String>,
-    pub submitted: Option<String>,
+    pub date: Option<Box<str>>,
+    pub submitted: Option<Box<str>>,
     pub times: Times,
     pub system: RunSystem,
     pub splits: Option<Splits>,
-    pub values: HashMap<String, String>,
+    pub values: HashMap<Box<str>, Box<str>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,14 +40,14 @@ pub enum PlayerRef {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct UserRef {
-    pub id: String,
+    pub id: Box<str>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct RunSystem {
     pub emulated: bool,
-    pub platform: String,
-    pub region: Option<String>,
+    pub platform: Box<str>,
+    pub region: Option<Box<str>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -57,18 +57,18 @@ pub struct Videos {
 
 #[derive(Debug, Deserialize)]
 pub struct Video {
-    pub uri: String,
+    pub uri: Box<str>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Times {
-    pub primary: String,
+    pub primary: Box<str>,
     pub primary_t: f64,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Splits {
-    pub uri: String,
+    pub uri: Box<str>,
 }
 
 fn runs_url(run_id: &str) -> Url {
@@ -77,6 +77,6 @@ fn runs_url(run_id: &str) -> Url {
     url
 }
 
-pub async fn by_id(client: &Client, run_id: String) -> Result<Run, Error> {
-    execute_request(client, runs_url(&run_id)).await
+pub async fn by_id(client: &Client, run_id: &str) -> Result<Run, Error> {
+    execute_request(client, runs_url(run_id)).await
 }

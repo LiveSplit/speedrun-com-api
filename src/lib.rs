@@ -67,9 +67,9 @@ struct Pagination {
 #[serde(tag = "rel")]
 enum PaginationLink {
     #[serde(rename = "next")]
-    Next { uri: String },
+    Next { uri: Box<str> },
     #[serde(rename = "prev")]
-    Previous { uri: String },
+    Previous { uri: Box<str> },
 }
 
 pub use platform::Client;
