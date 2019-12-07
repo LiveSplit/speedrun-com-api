@@ -18,7 +18,10 @@ macro_rules! api_url {
     };
 }
 
+pub mod categories;
+pub mod common;
 pub mod games;
+pub mod leaderboards;
 pub mod runs;
 
 #[derive(Debug, snafu::Snafu)]
@@ -62,17 +65,12 @@ struct Pagination {
 }
 
 #[derive(Debug, Deserialize)]
-struct PaginationLink {
-    rel: PaginationRel,
-    uri: String,
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-enum PaginationRel {
+#[serde(tag = "rel")]
+enum PaginationLink {
     #[serde(rename = "next")]
-    Next,
+    Next { uri: String },
     #[serde(rename = "prev")]
-    Previous,
+    Previous { uri: String },
 }
 
 pub type Client = hyper::Client<HttpsConnector<hyper::client::HttpConnector>>;
@@ -129,8 +127,14 @@ fn execute_paginated_request<T: DeserializeOwned + 'static>(
                                     page.pagination
                                         .links
                                         .into_iter()
-                                        .find(|l| l.rel == PaginationRel::Next)
-                                        .and_then(|l| Url::parse(&l.uri).ok()),
+                                        .find_map(|l| {
+                                            if let PaginationLink::Next { uri } = l {
+                                                Some(uri)
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                        .and_then(|uri| Url::parse(&uri).ok()),
                                 ),
                             )
                         }

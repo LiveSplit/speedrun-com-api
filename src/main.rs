@@ -1,7 +1,27 @@
-// use futures_util::{pin_mut, stream::StreamExt};
+use futures_util::{pin_mut, stream::StreamExt};
 use hyper::Client;
 use hyper_rustls::HttpsConnector;
-// use std::{fs::File, io::Write};
+use livesplit_core::timing::{
+    formatter::{Short, TimeFormatter},
+    TimeSpan,
+};
+use snafu::{OptionExt, ResultExt};
+use speedrun_com_api::{categories, games, leaderboards};
+
+#[derive(Debug, snafu::Snafu)]
+enum Error {
+    /// Couldn't find Wind Waker.
+    FindGame,
+    /// Failed downloading the game information for Wind Waker.
+    Game { source: speedrun_com_api::Error },
+    /// Failed downloading Wind Waker's categories.
+    Categories { source: speedrun_com_api::Error },
+    #[snafu(display("Failed accessing the leaderboard for {}.", category))]
+    Leaderboard {
+        source: speedrun_com_api::Error,
+        category: String,
+    },
+}
 
 #[tokio::main]
 async fn main() {
@@ -12,24 +32,40 @@ async fn main() {
 
 async fn try_run() -> anyhow::Result<()> {
     let client = Client::builder().build(HttpsConnector::new());
-    // let run = speedrun_com_api::run::get(&client, String::from("z0332rjz")).await?;
-    // dbg!(run);
 
-    let game = speedrun_com_api::games::by_id(&client, String::from("4d709l17")).await?;
-    dbg!(game);
+    let search = games::search(&client, String::from("Wind Waker"));
+    pin_mut!(search);
+    let game = search.next().await.context(FindGame)?.context(Game)?;
 
-    // let search = speedrun_com_api::games::search(&client, String::from("Mario"));
-    // pin_mut!(search);
-    // while let Some(game) = search.next().await {
-    //     dbg!(game?);
-    // }
+    let categories = categories::for_game(&client, game.id.clone())
+        .await
+        .context(Categories)?;
 
-    // let mut file = File::create("all_games.txt").unwrap();
-    // let all_games = speedrun_com_api::games::all(&client, None);
-    // pin_mut!(all_games);
-    // while let Some(game) = all_games.next().await {
-    //     writeln!(file, "{}", game?.names.international).unwrap();
-    // }
+    termimad::print_text(&format!("# {}\n", game.names.international));
+
+    for category in categories {
+        termimad::print_text(&format!("\n## {}\n\n", category.name));
+        if let Some(rules) = &category.rules {
+            termimad::print_text(rules);
+        }
+        let leaderboard = leaderboards::get(
+            &client,
+            game.id.clone(),
+            category.id,
+            leaderboards::Embeds::PLAYERS,
+        )
+        .await
+        .context(Leaderboard {
+            category: category.name,
+        })?;
+
+        if let Some(run) = leaderboard.runs.get(0) {
+            println!(
+                "WR is {}",
+                Short::new().format(TimeSpan::from_seconds(run.run.times.primary_t))
+            );
+        }
+    }
 
     Ok(())
 }

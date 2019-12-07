@@ -1,11 +1,12 @@
 use crate::{execute_paginated_request, execute_request, Client, Data, Error};
 use arrayvec::ArrayString;
-use futures_util::stream::{Stream, StreamExt};
+use futures_util::stream::Stream;
 use serde::Deserialize;
-use snafu::ResultExt;
 use std::collections::HashMap;
 use std::fmt::Write;
 use url::Url;
+
+pub use crate::common::Names;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -20,13 +21,6 @@ pub struct Game {
     pub ruleset: Rules,
     pub platforms: Vec<String>,
     pub variables: Option<Data<Vec<Variable>>>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Names {
-    pub international: String,
-    pub japanese: Option<String>,
-    pub twitch: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -121,16 +115,10 @@ pub struct GameHeader {
     pub weblink: String,
 }
 
-#[derive(Debug, snafu::Snafu)]
-pub enum HeadersError {
-    /// Failed enumerating all the games on speedrun.com.
-    Headers { source: crate::Error },
-}
-
 pub fn all(
     client: &Client,
     elements_per_page: Option<u16>,
-) -> impl Stream<Item = Result<GameHeader, HeadersError>> + '_ {
+) -> impl Stream<Item = Result<GameHeader, Error>> + '_ {
     let mut url = api_url!(games);
     let mut buf = ArrayString::<[u8; 5]>::new();
     let elements = if let Some(elements) = elements_per_page {
@@ -143,7 +131,7 @@ pub fn all(
         .append_pair("_bulk", "yes")
         .append_pair("max", elements);
 
-    execute_paginated_request(client, url).map(|item| item.context(Headers))
+    execute_paginated_request(client, url)
 }
 
 pub fn search(client: &Client, name: String) -> impl Stream<Item = Result<Game, Error>> + '_ {

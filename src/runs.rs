@@ -1,3 +1,5 @@
+// TODO: Move this to players.rs
+pub use crate::leaderboards::{Guest, Player};
 use crate::{execute_request, Client, Error};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -11,13 +13,34 @@ pub struct Run {
     pub category: String,
     pub videos: Option<Videos>,
     pub comment: Option<String>,
-    // pub players: PlayerEmbedding,
+    pub players: Players,
     pub date: Option<String>,
     pub submitted: Option<String>,
     pub times: Times,
     pub system: RunSystem,
     pub splits: Option<Splits>,
     pub values: HashMap<String, String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum Players {
+    Refs(Vec<PlayerRef>),
+    Embedded { data: Vec<Player> },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "rel")]
+#[serde(rename_all = "kebab-case")]
+pub enum PlayerRef {
+    User(UserRef),
+    Guest(Guest),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct UserRef {
+    pub id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,7 +63,7 @@ pub struct Video {
 #[derive(Debug, Deserialize)]
 pub struct Times {
     pub primary: String,
-    pub primary_t: u64, // TODO: idk what number type
+    pub primary_t: f64,
 }
 
 #[derive(Debug, Deserialize)]
