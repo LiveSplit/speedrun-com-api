@@ -3,6 +3,13 @@ name = "speedrun-com-api"
 version = "0.1.0"
 authors = ["Christopher Serr <christopher.serr@gmail.com>"]
 edition = "2018"
+documentation = "https://docs.rs/speedrun-com-api/"
+repository = "https://github.com/LiveSplit/speedrun-com-api"
+license = "Apache-2.0/MIT"
+description = "Bindings to the speedrun.com API for Rust."
+readme = "README.md"
+keywords = ["speedrun.com", "speedrun", "livesplit", "web", "async"]
+categories = ["network-programming", "api-bindings"]
 
 [dependencies]
 arrayvec =  { version = "0.5.1", features = ["serde"] }
