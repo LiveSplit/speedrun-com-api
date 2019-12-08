@@ -7,7 +7,7 @@ use url::Url;
 
 macro_rules! api_url {
     ($resource:ident) => {
-        Url::parse(concat!(
+        url::Url::parse(concat!(
             "https://www.speedrun.com/api/v1/",
             stringify!($resource)
         ))
@@ -21,6 +21,8 @@ pub mod categories;
 pub mod common;
 pub mod games;
 pub mod leaderboards;
+pub mod platforms;
+pub mod regions;
 pub mod runs;
 
 #[derive(Debug, snafu::Snafu)]

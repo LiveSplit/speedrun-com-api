@@ -3,7 +3,6 @@ use crate::runs::{PlayerRef, Players, Run};
 use crate::{execute_request, Client, Data, Error};
 use arrayvec::ArrayString;
 use serde::Deserialize;
-use url::Url;
 
 pub use crate::common::Names;
 

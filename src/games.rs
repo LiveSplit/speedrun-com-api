@@ -5,7 +5,6 @@ use futures_util::stream::Stream;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt::Write;
-use url::Url;
 
 pub use crate::common::Names;
 
