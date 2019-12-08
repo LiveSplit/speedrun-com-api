@@ -1,5 +1,5 @@
 use crate::common::Id;
-use crate::runs::Run;
+use crate::runs::{PlayerRef, Players, Run};
 use crate::{execute_request, Client, Data, Error};
 use arrayvec::ArrayString;
 use serde::Deserialize;
@@ -22,19 +22,47 @@ pub struct Leaderboard {
 }
 
 impl Leaderboard {
-    // pub fn records_with_players(&self) -> impl Iterator<Item = (&Record, impl Iterator<Item = &Player>)> {
-    //     let db = if let Some(players) = &self.players {
-    //         &players.data[..]
-    //     } else {
-    //         &[]
-    //     };
-    //     self.runs.iter().map(|run| {
-    //         match &run.players {
+    pub fn records_with_players(
+        &self,
+    ) -> impl Iterator<Item = (&Record, impl Iterator<Item = PlayerBorrow<'_>>)> {
+        let db = if let Some(players) = &self.players {
+            &players.data[..]
+        } else {
+            &[]
+        };
+        self.runs.iter().map(move |run| {
+            let players = match &run.run.players {
+                Players::Refs(player_refs) => Some(player_refs.iter().filter_map(
+                    move |player_ref| match player_ref {
+                        PlayerRef::User(user_ref) => db.iter().find_map(|player| match player {
+                            Player::User(user) if user.id == user_ref.id => {
+                                Some(PlayerBorrow::User(user))
+                            }
+                            _ => None,
+                        }),
+                        PlayerRef::Guest(guest) => Some(PlayerBorrow::Guest(guest)),
+                    },
+                )),
+                Players::Embedded { .. } => None,
+            };
+            (run, players.into_iter().flatten())
+        })
+    }
+}
 
-    //         }
-    //         (run, unimplemented!())
-    //     })
-    // }
+#[derive(Debug, Copy, Clone)]
+pub enum PlayerBorrow<'leaderboard> {
+    User(&'leaderboard User),
+    Guest(&'leaderboard Guest),
+}
+
+impl<'leaderboard> PlayerBorrow<'leaderboard> {
+    pub fn name(&self) -> &'leaderboard str {
+        match self {
+            PlayerBorrow::User(user) => &user.names.international,
+            PlayerBorrow::Guest(guest) => &guest.name,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
