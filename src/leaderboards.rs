@@ -1,3 +1,4 @@
+use crate::common::Id;
 use crate::runs::Run;
 use crate::{execute_request, Client, Data, Error};
 use arrayvec::ArrayString;
@@ -47,7 +48,7 @@ pub enum Player {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct User {
-    pub id: Box<str>,
+    pub id: Id,
     pub names: Names,
     pub weblink: Box<str>,
     pub name_style: NameStyle,
@@ -82,7 +83,7 @@ pub struct UserLocation {
 
 #[derive(Debug, Deserialize)]
 pub struct UserCountry {
-    pub code: Box<str>,
+    pub code: ArrayString<[u8; 6]>, // TODO: Stress Test this
 }
 
 #[derive(Debug, Deserialize)]

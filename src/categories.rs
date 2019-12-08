@@ -1,10 +1,11 @@
+use crate::common::Id;
 use crate::{execute_request, Client, Error};
 use serde::Deserialize;
 use url::Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Category {
-    pub id: Box<str>,
+    pub id: Id,
     pub weblink: Box<str>,
     pub name: Box<str>,
     #[serde(rename = "type")]

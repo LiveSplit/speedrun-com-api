@@ -1,25 +1,27 @@
 // TODO: Move this to players.rs
+use crate::common::Id;
 pub use crate::leaderboards::{Guest, Player};
 use crate::{execute_request, Client, Error};
+use arrayvec::ArrayString;
 use serde::Deserialize;
 use std::collections::HashMap;
 use url::Url;
 
 #[derive(Debug, Deserialize)]
 pub struct Run {
-    pub id: Box<str>,
+    pub id: Id,
     pub weblink: Box<str>,
-    pub game: Box<str>,
-    pub category: Box<str>,
+    pub game: Id,
+    pub category: Id,
     pub videos: Option<Videos>,
     pub comment: Option<Box<str>>,
     pub players: Players,
-    pub date: Option<Box<str>>,
-    pub submitted: Option<Box<str>>,
+    pub date: Option<ArrayString<[u8; 10]>>,
+    pub submitted: Option<ArrayString<[u8; 20]>>,
     pub times: Times,
     pub system: RunSystem,
     pub splits: Option<Splits>,
-    pub values: HashMap<Box<str>, Box<str>>,
+    pub values: HashMap<Id, Id>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,14 +42,14 @@ pub enum PlayerRef {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct UserRef {
-    pub id: Box<str>,
+    pub id: Id,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct RunSystem {
     pub emulated: bool,
-    pub platform: Box<str>,
-    pub region: Option<Box<str>>,
+    pub platform: Id,
+    pub region: Option<Id>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -1,3 +1,4 @@
+use crate::common::Id;
 use crate::{execute_paginated_request, execute_request, Client, Data, Error};
 use arrayvec::ArrayString;
 use futures_util::stream::Stream;
@@ -11,15 +12,15 @@ pub use crate::common::Names;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Game {
-    pub id: Box<str>,
+    pub id: Id,
     pub names: Names,
     pub abbreviation: Box<str>,
     pub weblink: Box<str>,
     pub released: u16,
-    pub release_date: Box<str>,
+    pub release_date: ArrayString<[u8; 10]>,
     pub assets: Assets,
     pub ruleset: Rules,
-    pub platforms: Vec<Box<str>>,
+    pub platforms: Vec<Id>,
     pub variables: Option<Data<Vec<Variable>>>,
 }
 
@@ -43,8 +44,8 @@ pub struct Assets {
 #[derive(Debug, Deserialize)]
 pub struct Asset {
     pub uri: Box<str>,
-    pub width: u64, // TODO: Number Type
-    pub height: u64,
+    pub width: u32,
+    pub height: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -71,9 +72,9 @@ pub enum TimingMethod {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Variable {
-    pub id: Box<str>,
+    pub id: Id,
     pub name: Box<str>,
-    pub category: Option<Box<str>>,
+    pub category: Option<Id>,
     pub scope: VariableScope,
     pub values: VariableValues,
     pub mandatory: bool,
@@ -97,8 +98,8 @@ pub enum VariableScopeKind {
 
 #[derive(Debug, Deserialize)]
 pub struct VariableValues {
-    pub values: HashMap<Box<str>, VariableValue>,
-    pub default: Option<Box<str>>,
+    pub values: HashMap<Id, VariableValue>,
+    pub default: Option<Id>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -109,7 +110,7 @@ pub struct VariableValue {
 
 #[derive(Debug, Deserialize)]
 pub struct GameHeader {
-    pub id: Box<str>,
+    pub id: Id,
     pub names: Names,
     pub abbreviation: Box<str>,
     pub weblink: Box<str>,

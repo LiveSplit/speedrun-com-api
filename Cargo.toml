@@ -5,7 +5,7 @@ authors = ["Christopher Serr <christopher.serr@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-arrayvec = "0.5.1"
+arrayvec =  { version = "0.5.1", features = ["serde"] }
 bitflags = "1.2.1"
 futures-util = { version = "0.3.1", default-features = false }
 http = "0.2.0"
