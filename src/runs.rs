@@ -1,7 +1,14 @@
 // TODO: Move this to players.rs
-use crate::common::Id;
 pub use crate::leaderboards::{Guest, Player};
-use crate::{execute_request, Client, Error};
+use crate::{
+    categories::{self, Category},
+    common::Id,
+    execute_request,
+    games::{self, Game},
+    platforms::{self, Platform},
+    regions::{self, Region},
+    Client, Error,
+};
 use arrayvec::ArrayString;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -71,6 +78,43 @@ pub struct Times {
 #[derive(Debug, Deserialize)]
 pub struct Splits {
     pub uri: Box<str>,
+}
+
+impl Splits {
+    pub fn id(&self) -> Option<&str> {
+        self.uri.rsplit("/").next()
+    }
+}
+
+impl Run {
+    pub async fn game(&self, client: &Client) -> Result<Game, Error> {
+        games::by_id(client, &self.game).await
+    }
+
+    pub async fn category(&self, client: &Client) -> Result<Category, Error> {
+        categories::by_id(client, &self.category).await
+    }
+
+    pub fn splits_id(&self) -> Option<&str> {
+        self.splits.as_ref()?.id()
+    }
+}
+
+impl UserRef {
+    // pub async fn user(&self, client: &Client) -> Result<User, Error> {}
+}
+
+impl RunSystem {
+    pub async fn platform(&self, client: &Client) -> Result<Platform, Error> {
+        platforms::by_id(client, &self.platform).await
+    }
+
+    pub async fn region(&self, client: &Client) -> Result<Option<Region>, Error> {
+        Ok(match &self.region {
+            Some(region) => Some(regions::by_id(client, region).await?),
+            None => None,
+        })
+    }
 }
 
 fn runs_url(run_id: &str) -> Url {

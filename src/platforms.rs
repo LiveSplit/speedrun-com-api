@@ -1,4 +1,4 @@
-use crate::{common::Id, execute_paginated_request, Client, Error};
+use crate::{common::Id, execute_paginated_request, execute_request, Client, Error};
 use arrayvec::ArrayString;
 use futures_util::stream::Stream;
 use serde::Deserialize;
@@ -23,4 +23,11 @@ pub fn all(
     }
 
     execute_paginated_request(client, url)
+}
+
+pub async fn by_id(client: &Client, platform_id: &str) -> Result<Platform, Error> {
+    let mut url = api_url!(platforms);
+    url.path_segments_mut().unwrap().push(platform_id);
+
+    execute_request(client, url).await
 }

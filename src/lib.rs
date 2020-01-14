@@ -25,6 +25,11 @@ pub mod platforms;
 pub mod regions;
 pub mod runs;
 
+pub use {
+    categories::Category, games::Game, leaderboards::Leaderboard, platforms::Platform,
+    regions::Region, runs::Run,
+};
+
 #[derive(Debug, snafu::Snafu)]
 pub enum Error {
     /// Failed receiving the response from speedrun.com.

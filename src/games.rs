@@ -1,5 +1,8 @@
 use crate::common::Id;
-use crate::{execute_paginated_request, execute_request, Client, Data, Error};
+use crate::{
+    categories::{self, Category},
+    execute_paginated_request, execute_request, Client, Data, Error,
+};
 use arrayvec::ArrayString;
 use futures_util::stream::Stream;
 use serde::Deserialize;
@@ -113,6 +116,25 @@ pub struct GameHeader {
     pub names: Names,
     pub abbreviation: Box<str>,
     pub weblink: Box<str>,
+}
+
+impl Game {
+    pub fn search<'client>(
+        client: &'client Client,
+        name: &str,
+    ) -> impl Stream<Item = Result<Game, Error>> + 'client {
+        self::search(client, name)
+    }
+
+    pub async fn categories(&self, client: &Client) -> Result<Vec<Category>, Error> {
+        categories::for_game(client, &self.id).await
+    }
+}
+
+impl GameHeader {
+    pub async fn game(&self, client: &Client) -> Result<Game, Error> {
+        by_id(client, &self.id).await
+    }
 }
 
 pub fn all(
