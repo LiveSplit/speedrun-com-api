@@ -12,7 +12,7 @@ keywords = ["speedrun.com", "speedrun", "livesplit", "web", "async"]
 categories = ["network-programming", "api-bindings"]
 
 [dependencies]
-arrayvec =  { version = "0.5.1", features = ["serde"] }
+arrayvec =  { version = "0.7.1", features = ["serde"] }
 bitflags = "1.2.1"
 futures-util = { version = "0.3.1", default-features = false }
 http = "0.2.0"
