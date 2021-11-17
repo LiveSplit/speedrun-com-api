@@ -23,7 +23,7 @@ url = "2.1.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 bytes = "0.5.2"
-hyper = { version = "0.13.0", default-features = false, features = ["tcp"] }
+hyper = { version = "0.14.15", default-features = false, features = ["tcp"] }
 hyper-rustls = "0.21.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
